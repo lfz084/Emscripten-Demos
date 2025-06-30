@@ -9,9 +9,18 @@
 
 <body>
     <script>
-        setTimeout(()=>{
-            alert(Object.keys(Module))
-        },1000)
+        var Module = {
+            onRuntimeInitialized: () => {
+                try{
+                const add = Module.cwrap("c_add", "number", ["number", "number"])
+                const num1 = Module.ccall("c_add", "number", ["number", "number"], [1,2])
+                alert([num1, add(2,3), add(3,4)])
+                }
+                catch(e){
+                    document.body.innerText = (e.toString())
+                }
+            }
+        }
     </script>
     <script src="demo.js"></script>
 </body>

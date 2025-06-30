@@ -10,7 +10,7 @@
 
 extern "C" {
     
-EMSCRIPTEN_KEEPALIVE int c_add(int num1, int num2) {
+int EMSCRIPTEN_KEEPALIVE c_add(int num1, int num2) {
     return num1 + num2;
 }
 
@@ -34,7 +34,10 @@ var result = Module.ccall('c_add', // name of C function
 
 // LLVM 优化可以内联和删除函数，之后您将无法调用它们。类似地，由 Closure Compiler 最小化的函数名是不可访问的。在任何一种情况下，解决方案是在您调用 emcc 时将函数添加到 EXPORTED_FUNCTIONS 列表中。
 
-// -sEXPORTED_FUNCTIONS=_main,_myfunc"
+// -sEXPORTED_RUNTIME_METHODS=ccall
+// -sEXPORTED_FUNCTIONS=_main,_myfunc
+// 如果命令行中用 -sEXPORTED_FUNCTIONS 编译出错，可在c代码中用 EMSCRIPTEN_KEEPALIVE 代替 
+
 //（请注意，我们还导出了 main - 如果我们没有这样做，编译器会假设我们不需要它。）导出的函数随后可以像平常一样被调用
 
 // a_result = Module.ccall('myfunc', 'number', ['number'], [10])
@@ -88,7 +91,10 @@ console.log(c_javascript_add(20, 30)); // 50
 
 // cwrap 实际上并没有调用编译后的代码（只有调用它返回的包装器才会这样做）。这意味着在运行时完全初始化之前（当然，调用返回的包装函数必须等待运行时，就像在一般情况下调用编译后的代码一样），可以安全地尽早调用 cwrap。
 
+// -sEXPORTED_RUNTIME_METHODS=cwrap
 // -sEXPORTED_FUNCTIONS=_main,_myfunc
+// 如果命令行中用 -sEXPORTED_FUNCTIONS 编译出错，可在c代码中用 EMSCRIPTEN_KEEPALIVE 代替
+
 // 导出函数可以像普通函数一样调用
 
 // my_func = Module.cwrap('myfunc', 'number', ['number'])

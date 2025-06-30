@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title></title>
+</head>
+
+<body>
+    <script>
+        const bufSize = 512;
+        const source = new Uint8Array(bufSize);
+        const target = new Uint8Array(bufSize);
+        
+        for (let i = 0; i < bufSize; i++) source[i] = i;
+    
+        var Module = {
+            onRuntimeInitialized: catchError(() => {
+                alertModuleKeys();
+                Module._copyArray()
+            }),
+            bufSize,
+            source,
+            target
+        }
+    
+        function alertModuleKeys() { alert(Object.keys(Module)) }
+        function catchError(callback) { return () => {try{ callback() }catch(e){ document.body.innerText = e.stack || e.toString()}} }
+        //setTimeout(alertModuleKeys, 5000)
+    </script>
+    <script src="test.js"></script>
+</body>
+
+</html>
