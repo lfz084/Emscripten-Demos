@@ -13,31 +13,34 @@ extern "C" {
             const unsigned int current = emscripten_stack_get_current();
             const unsigned int free = emscripten_stack_get_free();
             
-            std::cout << "base: " << base << ",\t" << "end: " << end << ",\t" << "current: " << current << ",\t" << "free: " << free << std::endl;
+            std::cout << "stack_base: " << base << std::endl;
+            std::cout << "stack_end: " << end << std::endl;
+            std::cout << "stack_current: " << current << std::endl;
+            std::cout << "stack_free: " << free << std::endl;
         }
     }
 
 
     EMSCRIPTEN_KEEPALIVE void check_heap(int count) {
-    try{
         const int size = 128 << 20;
         char* str;
         for (int i = 0; i < count; i++) {
             str = new(std::nothrow) char[size]; //(char*)malloc(size);
-            std::cout << "str:" << (un)str << std::endl;
+            std::cout << "str:" << (uint32_t)str << std::endl;
             if (str == NULL) {
-                std::cout << "ooooooooooooooo" << std::endl;
+                std::cout << "emscripten_heap_out" << std::endl;
                 break;
             }
+            else {
+                uint32_t* const buf = (uint32_t*)str;
+                const int end = size >> 2;
+                for (int j = 0; j < end; j++) buf[j] = 0xFFFFFFFF;
+            }
         }
-    }
-    catch(const char* msg) {
-        std::cout << "6666666666" << msg << std::endl;
-    }
     }
 }
 
 
 /*
-    em++ -sMEMORY64=2 -sSTACK_SIZE=128kb -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=32mb -sMAXIMUM_MEMORY=4gb stack_heap.cpp -o demo.js
+    em++ -sSTACK_SIZE=1mb -sINITIAL_MEMORY=32mb -sALLOW_MEMORY_GROWTH=1 -sMEMORY_GROWTH_GEOMETRIC_STEP=1 -sMAXIMUM_MEMORY=4gb stack_heap.cpp -o demo.js
 */

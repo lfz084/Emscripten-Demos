@@ -14,9 +14,11 @@
             print: (m) => document.body.innerText += `${m}\n`,
             onRuntimeInitialized: catchError(() => {
                 alertModuleKeys();
+                Module.print("onRuntimeInitialized:")
                 Module._check_stack(2000);
-                Module._check_heap(33);
-                Module._check_stack(2000);
+                Module.print(`wasm memory: ${Module.HEAPU8.length >>> 20}mb`);
+                Module._check_heap(8);
+                Module.print(`wasm memory: ${Module.HEAPU8.length >>> 20}mb`);
             })
         }
     
