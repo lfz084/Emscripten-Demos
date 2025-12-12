@@ -8,7 +8,7 @@
 extern "C" {
 
 int int_sqrt(int x) {
-  return sqrt(x);
+  return sqrt(x);>
 }
 
 }

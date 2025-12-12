@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title></title>
+</head>
+
+<body>
+	<script>
+		const wasmImports = {
+			/** @export */
+			_abort_js: __abort_js,
+			/** @export */
+			_tzset_js: __tzset_js,
+			/** @export */
+			emscripten_resize_heap: _emscripten_resize_heap,
+			/** @export */
+			environ_get: _environ_get,
+			/** @export */
+			environ_sizes_get: _environ_sizes_get,
+			/** @export */
+			fd_close: _fd_close,
+			/** @export */
+			fd_read: _fd_read,
+			/** @export */
+			fd_seek: _fd_seek,
+			/** @export */
+			fd_write: _fd_write
+		};
+		
+		function getWasmImports() {
+			// prepare imports
+			return {
+				'env': wasmImports,
+				'wasi_snapshot_preview1': wasmImports,
+			}
+		}
+		
+		const url = "index.wasm";
+		const importObject = getWasmImports()
+		fetch(url)
+            .then(response => {
+                return response.arrayBuffer()
+            })
+            .then(bytes => {
+                //通过浏览器提供的标准WebAssembly接口来编译和初始化一个Wasm模块
+                return WebAssembly.instantiate(bytes, importObject);
+            })
+            .then(results => {
+            	alert(results)
+                const wGlobal = results.instance.exports;
+                const memory = wGlobal.memory;
+                const IN_BUF = wGlobal._Z11getInBufferv();
+                const OUT_BUF = wGlobal._Z12getOutBufferv();
+            })
+            .catch(e => document.body.innerText = e.stack || e.message || e.toString())
+
+
+	</script>
+
+</body>
+
+</html>
