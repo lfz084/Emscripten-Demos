@@ -1,0 +1,29 @@
+<html>
+<body>
+  <button id=pause onclick=Pause() disabled=true>Pause</button>
+  <button id=resume onclick=Resume() disabled=true>Resume</button>
+  <button id=cancel onclick=Cancel() disabled=true>Cancel</button>
+  <br>
+  <div id=log>log</div>
+  <script>
+    function Pause() {
+      Module._pause_main_loop();
+    }
+    function Resume() {
+      Module._resume_main_loop();
+    }
+    function Cancel() {
+      Module._cancel_main_loop();
+    }
+
+    Module = {};
+    Module.onRuntimeInitialized = function() {
+      document.getElementById("pause").disabled = false;
+      document.getElementById("resume").disabled = false;
+      document.getElementById("cancel").disabled = false;
+    }
+    console.log=(str) => document.getElementById("log").innerText += (str + "\n")
+  </script>
+  <script src="pause_resume_cancel.js"></script>
+</body>
+</html>
