@@ -152,8 +152,8 @@ int main() {
 	return 0;
 }
 注意setup_nodefs()使用EM_ASM宏执行了挂接NODEFS的JavaScript脚本：FS.mkdir('/data')在虚拟文件系统中创建了“/data”目录，FS.mount(NODEFS, {root:'.'}, '/data')将当前的本地目录挂接到了上述目录。main()函数每次运行会打开/data/nodefs_data.txt——对应当前本地目录中的nodefs_data.txt，从中读取一个整数，加1后写回。用emcc编译上述代码：
-
-emcc nodefs.cc -o nodefs.js
+编译时要加上参数 -lnodefs.js
+emcc nodefs.cc -o nodefs.js -lnodefs.js
 使用Node多次运行nodefs.js，输出如下：
 
 > node nodefs.js
