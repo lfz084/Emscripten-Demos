@@ -1,0 +1,25 @@
+<html>
+<body>
+  <div id=log></div>
+  <script>
+    console.log = function(s) {
+      var log = document.getElementById("log");
+      var str = log.innerText.split("\n").slice(-10).join("\n");
+      log.innerText = (str + s+"\n");
+    }
+  </script>
+  <script>
+    //pi.html
+    var worker = new Worker("pi.js");
+    worker.onmessage = function(e) {
+      console.log("mainThread: message from Worker:" + e.data);
+      if (e.data == "Worker Ready.") {
+        worker.postMessage(20000000);
+      }
+    }
+    setInterval(function() {
+      console.log("mainThread: timer()");
+    }, 1000);
+  </script>
+</body>
+</html>

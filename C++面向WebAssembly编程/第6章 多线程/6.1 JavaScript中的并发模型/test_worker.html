@@ -1,0 +1,18 @@
+<html>
+<body>
+  <div id=log></div>
+  <script>
+    console.log = s => document.getElementById("log").innerText += (s+"\n");
+  </script>
+  <script>
+    //test_worker.html
+    var worker = new Worker("worker.js");
+    worker.onmessage = function(e) {
+      console.log(e.data);
+    }
+    worker.postMessage("Who are you?");
+    worker.postMessage("Show me the answer.");
+    worker.postMessage("Who's the best programmer in the world?");
+  </script>
+</body>
+</html>
