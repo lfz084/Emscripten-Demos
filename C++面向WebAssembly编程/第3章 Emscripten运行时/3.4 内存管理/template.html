@@ -1,0 +1,13 @@
+<html>
+  <body>
+  <div id=log></div>
+  <script>
+    console.log = function(s) {
+      var log = document.getElementById("log");
+      var str = log.innerText.split("\n").slice(-10).join("\n");
+      log.innerText = (str + s+"\n");
+    }
+  </script>
+  {{{ SCRIPT }}}
+  </body>
+</html>

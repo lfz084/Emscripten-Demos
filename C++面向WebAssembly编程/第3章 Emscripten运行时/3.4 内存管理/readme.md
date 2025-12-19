@@ -47,3 +47,6 @@ emmalloc的代码体积小于dlmalloc，但是如果程序中频繁申请大量�
 
 emcc mem.cc -s MALLOC="emmalloc" -o mem.js
 tips 除非对于代码体积极度敏感的场合，使用默认的dlmalloc内存分配器无疑是更优的选择。
+
+
+emcc demo.cpp -o demo.html -sEXPORTED_RUNTIME_METHODS=[wasmMemory] --pre-js pre.js -sIMPORTED_MEMORY=1 -sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=4gb -sTOTAL_STACK=8mb --shell-file template.html
