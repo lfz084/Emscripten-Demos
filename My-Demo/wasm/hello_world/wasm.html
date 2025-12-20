@@ -1,0 +1,14 @@
+<html>
+  <body>
+  <div id=log></div>
+  <script>
+    console.log = function(s) {
+      var lineNum = 30;
+      var log = document.getElementById("log");
+      var str = log.innerText.split("\n").slice(-lineNum).join("\n");
+      log.innerText = (str + s+"\n");
+    }
+  </script>
+  <script src="./wasm.js"></script>
+  </body>
+</html>

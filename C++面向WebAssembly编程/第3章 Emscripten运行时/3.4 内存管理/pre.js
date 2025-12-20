@@ -1,6 +1,6 @@
 function createMemory(size) {
   try {
-    return new WebAssembly.Memory({
+    var memory = new WebAssembly.Memory({
       "initial": size / 65536,
       // In theory we should not need to emit the maximum if we want "unlimited"
       // or 4GB of memory, but VMs error on that atm, see
@@ -9,6 +9,8 @@ function createMemory(size) {
       // always emit one.
       "maximum": 65536
     });
+    // new Uint32Array(memory.buffer).fill(0);
+    return memory;
   }catch(e) {}
 }
 
