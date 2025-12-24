@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title></title>
+  <style>
+    #log {
+      width: 956px;
+      height: 1280px;
+      border: 3px black solid;
+      font-size: 38px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      word-wrap: break-word;
+    }
+    #cmd {
+      width: 956px;
+      height: 60px;
+      border: 1px black solid;
+      font-size: 38px;
+    }
+    button {
+      width: 318px;
+      height: 60px;
+      font-size: 50px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="log">
+    <pre>
+
+    </pre>
+  </div>
+  <br><br>
+  <button id="button1">button1</button>
+  <button id="button2">button2</button>
+  <button id="button3">button3</button>
+
+  <script>
+    const logDiv = document.getElementById("log");
+    const btn01 = document.getElementById("button1");
+    const btn02 = document.getElementById("button2");
+    const btn03 = document.getElementById("button3");
+
+    btn01.onclick = function() {
+      console.log("add(1, 2, 3)")
+      worker_exports.add(1, 2, 3).then(console.log).catch(console.error)
+      console.log("testVerify()")
+      worker_exports.testVerify().then(console.log).catch(console.error)
+    }
+
+    btn02.onclick = async function() {
+      const arr = [8,[8]];
+      console.log("returnArray(" + JSON.stringify(arr) + ")");
+      worker_exports.returnArray(arr).then(a=>console.log(JSON.stringify(a))).catch(console.error)
+      console.log("testError(1, 2, 3, 4, 5)")
+      worker_exports.testError(1, 2, 3, 4, 5).then(console.log).catch(console.error)
+    }
+
+    btn03.onclick = async function() {
+      console.log('testProgress(console.log, "end", 2)');
+      worker_exports.testProgress(p => console.log(parseInt(p * 100) + "%"), "end", 2).then(console.log).catch(console.error);
+      const ms = 1500;
+      console.log("delay(" + ms + ")")
+      worker_exports.delay(ms).then(console.log).catch(console.error)
+    }
+
+    console.log = (...args) => log("black", args);
+    console.error = (...args) => log("red", args);
+    console.warn = (...args) => log("orange", args);
+    console.info = (...args) => log("blue", args);
+
+    function log(color = "black", ...args) {
+      logDiv.innerHTML += `<div style="color:${color}">${args}</div>`;
+      logDiv.scrollTo({
+        top: logDiv.scrollHeight,
+        left: 0,
+        behavior: "smooth",
+      });
+    }
+
+  </script>
+  <script src="worker.js">
+    worker
+  </script>
+</body>
+
+</html>

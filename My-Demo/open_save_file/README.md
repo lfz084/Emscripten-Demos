@@ -1,3 +1,3 @@
 command::
 
-    em++ -sALLOW_MEMORY_GROWTH=1 --js-library library.js osfile.cpp -o demo.js
+    em++ osfile.cpp -o demo.js --js-library library.js -sALLOW_MEMORY_GROWTH=1 -sEXPORTED_RUNTIME_METHODS=[HEAP8]

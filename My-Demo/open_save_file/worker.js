@@ -1,5 +1,5 @@
-const _IS_WEB = typeof window == 'object';
-const _IS_WORKER = typeof WorkerGlobalScope != 'undefined';
+var ENVIRONMENT_IS_WEB = typeof window == 'object';
+var ENVIRONMENT_IS_WORKER = typeof WorkerGlobalScope != 'undefined';
 var worker;
 
 function catchError(callback) {
@@ -9,9 +9,9 @@ function catchError(callback) {
     }
 }
 
-if (_IS_WEB) {
+if (ENVIRONMENT_IS_WEB) {
     
-    const CMD_IS_WEB = {
+    const CMD_WEB = {
         log: (...args) => console.log(...args),
         error: (...args) => console.error(...args),
         warn: (...args) => console.warn(...args),
@@ -26,9 +26,9 @@ if (_IS_WEB) {
     
     worker.onmessage = async function(e) {
         const data = e.data
-        if (Array.isArray(data) && typeof CMD_IS_WEB[data[0]] == "function") {
+        if (Array.isArray(data) && typeof CMD_WEB[data[0]] == "function") {
             const command = data.shift();
-            await (catchError(CMD_IS_WEB[command]))(...data);
+            await (catchError(CMD_WEB[command]))(...data);
         }
         else console.log(data)
     }
@@ -50,14 +50,14 @@ if (_IS_WEB) {
     }
     
 } else
-if (_IS_WORKER) {
+if (ENVIRONMENT_IS_WORKER) {
     
     console.log = (...args) => postMessage(["log", ...args])
     console.error = (...args) => postMessage(["error", ...args])
     console.warn = (...args) => postMessage(["warn", ...args])
     console.info = (...args) => postMessage(["info", ...args])
     
-    const CMD_IS_WORKER = {
+    const CMD_WORKER = {
         openFile: async (handle) => {
             await FS_SYNC["openFile"](handle);
             Module["_readFile"]();
@@ -195,7 +195,7 @@ if (_IS_WORKER) {
         }
         
         const command = arr.shift();
-        if (CMD_IS_WORKER[command]) await (catchError(CMD_IS_WORKER[command]))(...arr);
+        if (CMD_WORKER[command]) await (catchError(CMD_WORKER[command]))(...arr);
         else postMessage(`No command "${command}" found`)
     }
 
@@ -228,6 +228,7 @@ if (_IS_WORKER) {
     }
     
     async function init() {
+        postMessage("init worker...");
         const root = await navigator.storage.getDirectory();
         cacheFileHandle = await root.getFileHandle("cache", { create: true });
         _accessHandle = await cacheFileHandle.createSyncAccessHandle();
@@ -240,10 +241,14 @@ if (_IS_WORKER) {
     var Module = {
         onRuntimeInitialized: catchError(() => {
             postMessage("wasmReady");
-            postMessage("Module_API = " + JSON.stringify(Object.keys(Module), null, 2))
+            postMessage("Module_API = " + JSON.stringify(Object.keys(Module), null, 2));
         }),
         FS_SYNC
     }
     
-    importScripts("demo.js")
+    catchError(function() {
+      postMessage("init WebAssembly...");
+      importScripts("./demo.js");
+    })()
+    
 }
