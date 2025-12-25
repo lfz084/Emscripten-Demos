@@ -1,16 +1,27 @@
+// include ENVIRONMENT
 var ENVIRONMENT_IS_WEB = typeof window == 'object';
 var ENVIRONMENT_IS_WORKER = typeof WorkerGlobalScope != 'undefined';
+// end ENVIRONMENT
 
-const web_msg_exports = {};
-const worker_msg_exports = {};
-const worker_exports = {};
+// debug
+const OUTPUT_MSG_DATA = true;
+// end debug
+
+const msg_exports = {};
+const worker_exports = msg_exports;
 
 // include Message object
+// Using Message object create MessageArray for Web Worker Message
+// MessageArray is a Array
+// * array[0]     String    message ID
+// * array[1]     Number    message type and promise status
+// * array[2]     String    call function name
+// * array[3]     Array     call function arguments
 const Message = {
   STATUS: {
     request: 0x10,
     respone: 0x20,
-    output: 0x40,
+    notify: 0x40,
     resolve: 0x01,
     reject: 0x02,
     progress: 0x03
@@ -21,12 +32,6 @@ const Message = {
     this.numID = ++this.numID & 0x7FFFFFFF;
     return "msgID" + this.ENVIRONMENT + this.numID;
   },
-  /** message is a Array
-  * array[0]     String    message ID
-  * array[1]     Number    message type and promise status
-  * array[2]     String    call function name
-  * array[3]     Array     call function arguments
-  */
   isMessageArray: function(data) {
     return Array.isArray(data) && data.length === 4 && data[0].constructor.name === "String" && data[0].indexOf("msgID") === 0;
   },
@@ -47,11 +52,11 @@ const Message = {
       args
     ];
   },
-  isOutputMessage: function(data) {
-    return this.isMessageArray(data) && (data[1] & 0xF0) === this.STATUS.output;
+  isNotifyMessage: function(data) {
+    return this.isMessageArray(data) && (data[1] & 0xF0) === this.STATUS.createMessageFunction;
   },
-  createOutputMessage: function(funcname, ...args) {
-    return this.createMessageArray("msgIDoutput", this.STATUS.output, funcname, ...args);
+  createNotifyMessage: function(funcname, ...args) {
+    return this.createMessageArray("msgID" + this.ENVIRONMENT + "notify", this.STATUS.notify, funcname, ...args);
   },
   isRequestMessage: function(data) {
     return this.isMessageArray(data) && (data[1] & 0xF0) === this.STATUS.request;
@@ -92,10 +97,10 @@ const Message = {
 };
 // end Message object
 
-// include output functions
+// include notify functions
 if (ENVIRONMENT_IS_WEB) {
   console.log("ENVIRONMENT_IS_WEB");
-  Object.assign(web_msg_exports, {
+  Object.assign(msg_exports, {
     log: (...args) => console.log(...args),
     error: (...args) => console.error(...args),
     warn: (...args) => console.warn(...args),
@@ -103,83 +108,86 @@ if (ENVIRONMENT_IS_WEB) {
   });
 } else
   if (ENVIRONMENT_IS_WORKER) {
-  console.log = (...args) => postMessage(Message.createOutputMessage("log", ...args));
-  console.error = (...args) => postMessage(Message.createOutputMessage("error", ...args));
-  console.warn = (...args) => postMessage(Message.createOutputMessage("warn", ...args));
-  console.info = (...args) => postMessage(Message.createOutputMessage("info", ...args));
+  console.log = (...args) => postMessage(Message.createNotifyMessage("log", ...args));
+  console.error = (...args) => postMessage(Message.createNotifyMessage("error", ...args));
+  console.warn = (...args) => postMessage(Message.createNotifyMessage("warn", ...args));
+  console.info = (...args) => postMessage(Message.createNotifyMessage("info", ...args));
   console.log("ENVIRONMENT_IS_WORKER");
 } else throw new Error("The script only run in 'web or worker'")
-// end output functions
+// end notify functions
 
-// include verifyPermission function
+function getProgressFunction(funcname) {
+  return msg_exports[funcname].progressFunction;
+}
+
+function createMessageFunction(funcname) {
+  return async function(...args) {
+    return postMessagePromise(Message.createRequestMessage(funcname, ...args));
+  }
+}
+
+// include imports.js
+// the functions run in the web
+// import functions to worker
 if (ENVIRONMENT_IS_WEB) {
-  Object.assign(web_msg_exports, {
-    verifyPermission: function(...args) {
-      return confirm(...args);
-    }
+  function verifyPermission(...args) {
+    return confirm(...args);
+  }
+  Object.assign(msg_exports, {
+  	verifyPermission,
   })
 } else
   if (ENVIRONMENT_IS_WORKER) {
-  Object.assign(worker_msg_exports, {
-    verifyPermission: async function(...args) {
-      return postMessagePromise(()=> {}, Message.createRequestMessage("verifyPermission", ...args));
-    }
+  Object.assign(msg_exports, {
+  	verifyPermission: createMessageFunction("verifyPermission"),
   })
 }
-// end verifyPermission function
+// end imports.js
 
-// include user import function
+// include exports.js
+// the functions run in the worker
+// export functions to web
 if (ENVIRONMENT_IS_WEB) {
-  function createFunction(funcname) {
-    return async function(...args) {
-      return postMessagePromise(()=> {}, Message.createRequestMessage(funcname, ...args));
-    }
-  }
-  function createProgressFunction(funcname) {
-    return async function(...args) {
-      const progress = args.shift();
-      return postMessagePromise(progress, Message.createRequestMessage(funcname, ...args));
-    }
-  }
-  Object.assign(worker_exports, {
-    add: createFunction("add"),
-    delay: createFunction("delay"),
-    testError: createFunction("testError"),
-    returnArray: createFunction("returnArray"),
-    testVerify: createFunction("testVerify"),
-    testProgress: createProgressFunction("testProgress"),
-  });
+  Object.assign(msg_exports, {
+  	add: createMessageFunction("add"),
+  	delay: createMessageFunction("delay"),
+  	testError: createMessageFunction("testError"),
+  	returnArray: createMessageFunction("returnArray"),
+  	testVerify: createMessageFunction("testVerify"),
+  	testProgress: createMessageFunction("testProgress"),
+  })
 } else
   if (ENVIRONMENT_IS_WORKER) {
-  function add(msgID, ...args) {
+  function add(...args) {
     let sum = 0;
     for (let i = 0; i < args.length; i++)
       sum += args[i];
     return sum
   }
-
-  function delay(msgID, ms) {
+  
+  function delay(ms) {
     return new Promise(resolve => setTimeout(() => resolve("delay: " + ms + "ms"), ms));
   }
-
-  function testError(msgID) {
+  
+  function testError() {
     throw "testError";
   }
-
-  function returnArray(msgID, arr) {
+  
+  function returnArray(arr) {
     return arr;
   }
   
   function testVerify() {
-    return worker_msg_exports["verifyPermission"]("worker verify")
+    return msg_exports["verifyPermission"]("worker verify")
   }
-
-  function testProgress(msgID, ...args) {
+  
+  function testProgress(...args) {
+    const thisProgressFunc = getProgressFunction("testProgress");
     return new Promise(resolve => {
       let p = 0;
       const timer = setInterval(() => {
         p += 0.1;
-        postMessage(Message.createProgreesMessage(msgID, "testProgress", p));
+        thisProgressFunc(parseInt(p * 100) / 100, parseInt(p * 100) + "%");
         if (p > 1) {
           clearInterval(timer);
           resolve(...args);
@@ -188,12 +196,16 @@ if (ENVIRONMENT_IS_WEB) {
         200)
     })
   }
-
-  Object.assign(worker_msg_exports, {
-    add, delay, testError, returnArray, testVerify, testProgress
-  });
+  Object.assign(msg_exports, {
+  	add,
+  	delay,
+  	testError,
+  	returnArray,
+  	testVerify,
+  	testProgress,
+  })
 }
-// end user import function
+// end exports.js
 
 function errToString(e) {
   return e.stack || e.message || e.toString();
@@ -230,18 +242,21 @@ if (ENVIRONMENT_IS_WEB) {
   dirname = dirfile.slice(0, dirfile.lastIndexOf("/") & 0x7FFFFFFF)
 }
 
-let postMessagePromise = function(){}
-const _postMessagePromise = async function (object, progress = ()=> {}, messageArray) {
+let postMessagePromise = function() {};
+const _postMessagePromise = async function (object, messageArray) {
   const {
-    msgID
+    msgID,
+    funcname
   } = Message.parseMessageArray(messageArray);
   const thisMsgID = msgID;
+  const thisProgressFunc = getProgressFunction(funcname);
   return new Promise((resolve, reject) => {
     function onMsg(e) {
       const data = e.data;
       if (Message.isResponeMessage(data)) {
         const {
           msgID,
+          args,
           result
         } = Message.parseMessageArray(data);
         if (thisMsgID !== msgID) return;
@@ -252,7 +267,7 @@ const _postMessagePromise = async function (object, progress = ()=> {}, messageA
           reject(result);
           removeEvent();
         } else if (Message.isProgreesMessage(data)) {
-          typeof progress === "function" && progress(result);
+          typeof thisProgressFunc === "function" && thisProgressFunc(...args);
         }
       }
     }
@@ -278,6 +293,7 @@ if (ENVIRONMENT_IS_WEB) {
     const worker = new Worker(dirfile);
     worker.onmessage = async function(e) {
       const data = e.data;
+      OUTPUT_MSG_DATA && console.info(data);
       if (Message.isMessageArray(data)) {
         if (Message.isResponeMessage(data)) return;
         const {
@@ -285,7 +301,7 @@ if (ENVIRONMENT_IS_WEB) {
           funcname,
           args
         } = Message.parseMessageArray(data);
-        const result = await (catchError(web_msg_exports[funcname]))(...args);
+        const result = await (catchError(msg_exports[funcname]))(...args);
         Message.isRequestMessage(data) && worker.postMessage(Message.createResolveMessage(msgID, funcname, result));
       } else console.warn("Unknown message: " + data)
     }
@@ -305,6 +321,7 @@ if (ENVIRONMENT_IS_WEB) {
   try {
     onmessage = async function (e) {
       const data = e.data;
+      OUTPUT_MSG_DATA && console.info(data);
       if (Message.isMessageArray(data)) {
         if (!Message.isRequestMessage(data)) return;
         const {
@@ -318,9 +335,10 @@ if (ENVIRONMENT_IS_WEB) {
         function _reject(errMsg) {
           postMessage(Message.createRejectMessage(msgID, funcname, errMsg));
         }
-        if (worker_msg_exports[funcname]) {
+        if (msg_exports[funcname]) {
           try {
-            const result = await (worker_msg_exports[funcname])(msgID, ...args);
+            msg_exports[funcname].progressFunction = (...args) => postMessage(Message.createProgreesMessage(msgID, funcname, ...args));
+            const result = await (msg_exports[funcname])(...args);
             _resolve(result);
           }catch(e) {
             _reject(errToString(e))
