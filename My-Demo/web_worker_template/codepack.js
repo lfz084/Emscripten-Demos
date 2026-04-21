@@ -1,44 +1,76 @@
-const DEBUG = false;
+// get atgv;
+const argv = process.argv;
+console.info(argv)
+
+const jsonFileName = argv[2] || "./codepack.json";
+const OUTPUT_WORKER_MSG_DATA = argv[3] || false;
+const DEBUG = argv[4] || false;
 
 console.log(">>> step 01");
 console.log("runing script \"" + __filename.slice(__filename.lastIndexOf("\/") + 1 - __filename.length) + "\"");
 
-var fs = require("fs");
+const fs = require("fs");
+
+var importFileNames = ["./imports.js"];
+var exportFileNames = ["./exports.js"];
+var workerName = "./worker.js";
+var debugName = "./debug.js";
+var htmlName = "./worker.html";
+
+if (fs.existsSync(jsonFileName)) {
+  try {
+    var jsonfileData = fs.readFileSync(jsonFileName);
+    var jsonString = jsonfileData.toString();
+    var obj = JSON.parse(jsonString);
+    importFileNames = obj.importFileNames || importFileNames;
+    exportFileNames = obj.exportFileNames || exportFileNames;
+    workerName = obj.workerName || workerName;
+    debugName = obj.debugName || debugName;
+    htmlName = obj.htmlName || htmlName;
+  }catch(e) {
+    console.error(e)}
+} else {
+  console.warn(`file "${jsonFileName}" not found`);
+}
 
 console.log(">>> step 02");
-console.log("read ./imports.js");
-if (fs.existsSync("./imports.js")) {
-  var importsData = fs.readFileSync("./imports.js");
-  var importsCode = importsData.toString();
-  DEBUG && console.log(importsCode)
-  var importFuncNames = filterAllFunctionNames(importsCode);
-  DEBUG && console.log(importFuncNames)
-  var importWebCode = importsCode + "\n" + createAssignCode("msg_exports", importFuncNames, createFunctionNameCodeLine);
-  DEBUG && console.log(importWebCode);
-  var importWorkerCode = createAssignCode("msg_exports", importFuncNames, createMessageFunctionCodeLine);
-  DEBUG && console.log(importWorkerCode);
-} else {
-  console.warn(`file "./imports.js" not found`);
-  var importWebCode = "";
-  var importWorkerCode = "";
+var importWebCode = "";
+var importWorkerCode = "";
+for (filename of importFileNames) {
+  console.log("read " + filename);
+  if (fs.existsSync(filename)) {
+    var importsData = fs.readFileSync(filename);
+    var importsCode = importsData.toString();
+    DEBUG && console.log(importsCode)
+    var importFuncNames = filterAllFunctionNames(importsCode);
+    DEBUG && console.log(importFuncNames)
+    importWebCode += "\n" + importsCode + "\n" + createAssignCode("msg_exports", importFuncNames, createFunctionNameCodeLine);
+    DEBUG && console.log(importWebCode);
+    importWorkerCode += "\n" + createAssignCode("msg_exports", importFuncNames, createMessageFunctionCodeLine);
+    DEBUG && console.log(importWorkerCode);
+  } else {
+    console.warn(`file "${filename}" not found`);
+  }
 }
 
 console.log(">>> step 03");
-console.log("read ./exports.js");
-if (fs.existsSync("./exports.js")) {
-  var exportsData = fs.readFileSync("./exports.js");
-  var exportsCode = exportsData.toString();
-  DEBUG && console.log(exportsCode)
-  var exportFuncNames = filterAllFunctionNames(exportsCode);
-  DEBUG && console.log(exportFuncNames);
-  var exportWebCode = createAssignCode("msg_exports", exportFuncNames, createMessageFunctionCodeLine);
-  DEBUG && console.log(exportWebCode);
-  var exportWorkerCode = exportsCode + "\n" + createAssignCode("msg_exports", exportFuncNames, createFunctionNameCodeLine);
-  DEBUG && console.log(exportWorkerCode);
-} else {
-  console.warn(`file "./exports.js" not found`);
-  var exportWebCode = "";
-  var exportWorkerCode = "";
+var exportWebCode = "";
+var exportWorkerCode = "";
+for (filename of exportFileNames) {
+  console.log("read " + filename);
+  if (fs.existsSync(filename)) {
+    var exportsData = fs.readFileSync(filename);
+    var exportsCode = exportsData.toString();
+    DEBUG && console.log(exportsCode)
+    var exportFuncNames = filterAllFunctionNames(exportsCode);
+    DEBUG && console.log(exportFuncNames);
+    exportWebCode += "\n" + createAssignCode("msg_exports", exportFuncNames, createMessageFunctionCodeLine);
+    DEBUG && console.log(exportWebCode);
+    exportWorkerCode += "\n" + exportsCode + "\n" + createAssignCode("msg_exports", exportFuncNames, createFunctionNameCodeLine);
+    DEBUG && console.log(exportWorkerCode);
+  } else {
+    console.warn(`file "${filename}" not found`);
+  }
 }
 
 console.log(">>> step 04");
@@ -48,28 +80,30 @@ var templateCode = templateData.toString();
 DEBUG && console.log(templateCode);
 
 console.log(">>> step 05");
-console.log("create worker code");
+console.log("create worker code");0
 var workerCode = templateCode;
+const regexp_OUTPUT_MSG_DATA = /\{\{\{\s*\n*\s*BOOL_OUTPUT_MSG_DATA\s*\n*\s*\}\}\}/;
 const regexp_IMPORT_WEB_CODE = /\{\{\{\s*\n*\s*IMPORT_WEB_CODE\s*\n*\s*\}\}\}/;
 const regexp_IMPORT_WORKER_CODE = /\{\{\{\s*\n*\s*IMPORT_WORKER_CODE\s*\n*\s*\}\}\}/;
 const regexp_EXPORT_WEB_CODE = /\{\{\{\s*\n*\s*EXPORT_WEB_CODE\s*\n*\s*\}\}\}/;
 const regexp_EXPORT_WORKER_CODE = /\{\{\{\s*\n*\s*EXPORT_WORKER_CODE\s*\n*\s*\}\}\}/;
+workerCode = workerCode.replace(regexp_OUTPUT_MSG_DATA, OUTPUT_WORKER_MSG_DATA);
 workerCode = workerCode.replace(regexp_IMPORT_WEB_CODE, formatCode(regexp_IMPORT_WEB_CODE, templateCode, importWebCode));
 workerCode = workerCode.replace(regexp_IMPORT_WORKER_CODE, formatCode(regexp_IMPORT_WORKER_CODE, templateCode, importWorkerCode));
 workerCode = workerCode.replace(regexp_EXPORT_WEB_CODE, formatCode(regexp_EXPORT_WEB_CODE, templateCode, exportWebCode));
 workerCode = workerCode.replace(regexp_EXPORT_WORKER_CODE, formatCode(regexp_EXPORT_WORKER_CODE, templateCode, exportWorkerCode));
 
 console.log(">>> step 06");
-console.log("write ./worker.js")
-fs.writeFileSync("./worker.js", workerCode);
+console.log("write " + workerName);
+fs.writeFileSync(workerName, workerCode);
 
 console.log(">>> step 07");
-console.log("read ./debug.js");
-if (fs.existsSync("./debug.js")) {
-  var debugData = fs.readFileSync("./debug.js");
+console.log("read " + debugName);
+if (fs.existsSync(debugName)) {
+  var debugData = fs.readFileSync(debugName);
   var debugCode = debugData.toString();
 } else {
-  console.warn(`file "./debug.js" not found`);
+  console.warn(`file ${debugName} not found`);
   var debugCode;
 }
 
@@ -82,11 +116,13 @@ if (debugCode) {
   console.log(">>> step 09");
   console.log("create html code");
   const regexp_HTML_SCRIPT = /\{\{\{\s*\n*\s*HTML_SCRIPT\s*\n*\s*\}\}\}/;
+  const regexp_HTML_WORKERNAME = /\{\{\{\s*\n*\s*WORKERNAME\s*\n*\s*\}\}\}/;
   htmlCode = replaceCode(regexp_HTML_SCRIPT, htmlCode, debugCode);
+  htmlCode = htmlCode.replace(regexp_HTML_WORKERNAME, workerName);
 
   console.log(">>> step 10");
-  console.log("write ./worker.html");
-  fs.writeFileSync("./worker.html", htmlCode);
+  console.log("write " + htmlName);
+  fs.writeFileSync(htmlName, htmlCode);
 }
 
 console.log("<<< completed.");

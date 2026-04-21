@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FileSystemAPI</title>
+    <style>
+        .container {
+          display: grid;
+          grid-template-columns: 25% 25% 25% 25% ;
+        }
+        #log {
+            width: 420x;
+            height: 480px;
+            border: 2px black solid;
+            font-size: 23px;
+            overflow-x: hidden;
+            overflow-y: auto;
+            word-wrap:break-word;
+        }
+        #cmd {
+            width: 480px;
+            height: 30px;
+            border: 1px black solid;
+            font-size: 23px;
+        }
+        button {
+            width: 100%;
+            height: 28px;
+            font-size: 23px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id = "log"><pre></pre></div>
+    <br><br>
+    <div class = "container">
+      <button id = "01"></button>
+      <button id = "02"></button>
+      <button id = "03"></button>
+      <button id = "04"></button>
+      <button id = "05"></button>
+      <button id = "06"></button>
+      <button id = "07"></button>
+      <button id = "clear"></button>
+    </div>
+    <script>
+      addEventListener("error", (e)=>console.error(e.stack || e.message || e.toString()));
+    </script>
+    <script>
+      const logDiv = document.getElementById("log");
+        
+      console.log = (...args) => log("black", args);
+      console.error = (...args) => log("red", args);
+      console.warn = (...args) => log("orange", args);
+      console.info = (...args) => log("blue", args);
+        
+      function log(color = "black", ...args) {
+          logDiv.innerHTML += `<div style="color:${color}">${args}</div>`;
+          logDiv.scrollTo({
+              top: logDiv.scrollHeight,
+              left: 0,
+              behavior: "smooth",
+          });
+      }
+      
+      function clear() {
+          logDiv.innerHTML = "";
+      }
+      
+      function catchError(callback) {
+        return (...args) => {
+          function error(e) { console.error(e.stack || e.message || e.toString()) }
+          try { 
+            if (callback.constructor.name === "Function")
+              return callback(...args)
+            else if(callback.constructor.name === "AsyncFunction")
+              return callback(...args).catch(error)
+          }
+          catch (e) { error(e) }
+        }
+      }
+      
+      const btnClear = document.getElementById("clear");
+      btnClear.innerHTML = "Clear";
+      btnClear.onclick = function() {
+        clear();
+      }
+    </script>
+    <script src="JSFile.js"></script>
+    <script>
+      async function verifyPermission(fileHandle, mode) {
+        const opt = { mode };
+        if ((await fileHandle.queryPermission(opt)) === "granted") {
+            return true;
+        }
+        if ((await fileHandle.requestPermission(opt)) === "granted") {
+            return true;
+        }
+        return false;
+      }
+      
+      let fileHandle;
+      
+      async function openFile() {
+        const fileHandles = await showOpenFilePicker();
+        return fileHandles[0];
+      }
+      
+      async function saveFile() {
+        return await showSaveFilePicker();
+      }
+    </script>
+    <script>
+      let jsFile = new JSFile();
+        const btnOpenFile = document.getElementById("01");
+        btnOpenFile.innerHTML = "Open";
+        btnOpenFile.onclick = catchError(async function() {
+          fileHandle = await openFile();
+          console.log("openFile: " + fileHandle.name);
+        })
+        
+        const btnSaveFile = document.getElementById("02");
+        btnSaveFile.innerHTML = "Save";
+        btnSaveFile.onclick = catchError(async function() {
+          fileHandle = await saveFile();
+          console.log("saveFile: " + fileHandle.name);
+        })
+        
+        const btnRead = document.getElementById("05");
+        btnRead.innerHTML = "read";
+        btnRead.onclick = catchError(async function() {
+            const buf = new ArrayBuffer(8);
+            const len = await jsFile.read(buf);
+            console.log("bytes: " + len)
+            console.log("buffer: " + new Uint8Array(buf))
+        })
+        
+        const btnWrite = document.getElementById("06");
+        btnWrite.innerHTML = "write";
+        btnWrite.onclick = catchError(async function() {
+            const size = 8;
+            const u8 = new Uint8Array([1,2,3,4,5,6,7,8,9]);
+            await jsFile.write(new DataView(u8.buffer, 0, size));
+            console.log("write: " + u8.slice(0,size))
+        })
+        
+        const btnClose = document.getElementById("07");
+        btnClose.innerHTML = "close";
+        btnClose.onclick = catchError(async function() {
+          jsFile.close()
+          console.log("close file")
+        })
+        
+        const btnOpenWrite = document.getElementById("04");
+        btnOpenWrite.innerHTML = "OpenW";
+        btnOpenWrite.onclick = catchError(async function(){
+          await jsFile.open(fileHandle, JSFile.WRITE);
+          console.log("open write");
+        })
+        
+        const btnOpenRead = document.getElementById("03");
+        btnOpenRead.innerHTML = "OpenR";
+        btnOpenRead.onclick = catchError(async function(){
+          await jsFile.open(fileHandle, JSFile.READ);
+          console.log("open read")
+        })
+        
+    </script>
+</body>
+
+</html>

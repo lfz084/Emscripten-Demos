@@ -4,7 +4,7 @@ var ENVIRONMENT_IS_WORKER = typeof WorkerGlobalScope != 'undefined';
 // end ENVIRONMENT
 
 // debug
-const OUTPUT_MSG_DATA = true;
+const OUTPUT_MSG_DATA = {{{BOOL_OUTPUT_MSG_DATA}}};
 // end debug
 
 const msg_exports = {};
@@ -213,7 +213,7 @@ const _postMessagePromise = async function (object, messageArray) {
           resolve(result);
           removeEvent();
         } else if (Message.isRejectMessage(data)) {
-          reject(result);
+          reject(new Error(result)); // result is error string
           removeEvent();
         } else if (Message.isProgreesMessage(data)) {
           typeof thisProgressFunc === "function" && thisProgressFunc(...args);

@@ -1,0 +1,7 @@
+{
+"importFileNames": ["./LocalFile-imports.js"],
+"exportFileNames": ["./LocalFile-exports.js"],
+"workerName": "./LocalFile-worker.js",
+"debugName": "./LocalFile-debug.js",
+"htmlName": "./worker.html"
+}

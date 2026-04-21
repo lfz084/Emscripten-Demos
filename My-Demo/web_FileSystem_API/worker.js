@@ -142,31 +142,9 @@ if (ENVIRONMENT_IS_WEB) {
 // export functions to web
 if (ENVIRONMENT_IS_WEB) {
   
-  Object.assign(msg_exports, {
-  	sum: createMessageFunction("sum"),
-  })
-  Object.assign(msg_exports, {
-  	max: createMessageFunction("max"),
-  })
 } else
   if (ENVIRONMENT_IS_WORKER) {
   
-  function sum(...args) {
-    let s = 0;
-    for (let i = 0; i < args.length; i++) {
-      s += args[i];
-    }
-    return s;
-  }
-  Object.assign(msg_exports, {
-  	sum,
-  })
-  function max(...args) {
-    return Math.max(...args);
-  }
-  Object.assign(msg_exports, {
-  	max,
-  })
 }
 // end exports.js
 
@@ -227,7 +205,7 @@ const _postMessagePromise = async function (object, messageArray) {
           resolve(result);
           removeEvent();
         } else if (Message.isRejectMessage(data)) {
-          reject(result);
+          reject(new Error(result)); // result is error string
           removeEvent();
         } else if (Message.isProgreesMessage(data)) {
           typeof thisProgressFunc === "function" && thisProgressFunc(...args);

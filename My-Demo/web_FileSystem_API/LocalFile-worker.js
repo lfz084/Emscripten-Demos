@@ -4,7 +4,7 @@ var ENVIRONMENT_IS_WORKER = typeof WorkerGlobalScope != 'undefined';
 // end ENVIRONMENT
 
 // debug
-const OUTPUT_MSG_DATA = true;
+const OUTPUT_MSG_DATA = false;
 // end debug
 
 const msg_exports = {};
@@ -131,9 +131,27 @@ function createMessageFunction(funcname) {
 // import functions to worker
 if (ENVIRONMENT_IS_WEB) {
   
+  async function verifyPermission(fileHandle, mode) {
+    const opt = {
+      mode
+    };
+    if ((await fileHandle.queryPermission(opt)) === "granted") {
+      return true;
+    }
+    if ((await fileHandle.requestPermission(opt)) === "granted") {
+      return true;
+    }
+    return false;
+  }
+  Object.assign(msg_exports, {
+  	verifyPermission,
+  })
 } else
   if (ENVIRONMENT_IS_WORKER) {
   
+  Object.assign(msg_exports, {
+  	verifyPermission: createMessageFunction("verifyPermission"),
+  })
 }
 // end imports.js
 
@@ -143,29 +161,53 @@ if (ENVIRONMENT_IS_WEB) {
 if (ENVIRONMENT_IS_WEB) {
   
   Object.assign(msg_exports, {
-  	sum: createMessageFunction("sum"),
-  })
-  Object.assign(msg_exports, {
-  	max: createMessageFunction("max"),
+  	open: createMessageFunction("open"),
+  	close: createMessageFunction("close"),
+  	read: createMessageFunction("read"),
+  	write: createMessageFunction("write"),
+  	flush: createMessageFunction("flush"),
   })
 } else
   if (ENVIRONMENT_IS_WORKER) {
   
-  function sum(...args) {
-    let s = 0;
-    for (let i = 0; i < args.length; i++) {
-      s += args[i];
-    }
-    return s;
+  importScripts("./JSFile.js", "./LocalFile.js");
+  
+  const lcFile = new LocalFile();
+  
+  async function open(...args) {
+    return lcFile.open(...args);
+  }
+  
+  async function close(...args) {
+    return lcFile.close(...args);
+  }
+  
+  async function read(...args) {
+    const buffer = args[0].buffer || args[0];
+    const byteOffset = args[0].byteOffset || 0;
+    const thisProgressFunc = getProgressFunction("read");
+    const bytes = await lcFile.read(...args);
+    thisProgressFunc(new DataView(buffer, byteOffset, byteOffset + bytes))
+    return bytes;
+  }
+  
+  async function write(...args) {
+    const buffer = args[0].buffer || args[0];
+    const byteOffset = args[0].byteOffset || 0;
+    const byteLength = args[0].byteLength;
+    console.log(new Uint8Array(buffer, byteOffset, byteOffset + byteLength))
+    return lcFile.write(...args);
+  }
+  
+  async function flush(...args) {
+    return lcFile.flush();
   }
   Object.assign(msg_exports, {
-  	sum,
-  })
-  function max(...args) {
-    return Math.max(...args);
-  }
-  Object.assign(msg_exports, {
-  	max,
+  	open,
+  	close,
+  	read,
+  	write,
+  	flush,
   })
 }
 // end exports.js
@@ -227,7 +269,7 @@ const _postMessagePromise = async function (object, messageArray) {
           resolve(result);
           removeEvent();
         } else if (Message.isRejectMessage(data)) {
-          reject(result);
+          reject(new Error(result)); // result is error string
           removeEvent();
         } else if (Message.isProgreesMessage(data)) {
           typeof thisProgressFunc === "function" && thisProgressFunc(...args);

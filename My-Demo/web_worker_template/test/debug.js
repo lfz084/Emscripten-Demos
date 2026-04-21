@@ -1,3 +1,4 @@
 document.body.onload = function() {
-  console.log(worker_exports.sum(1,2,3))
+  worker_exports.sum(1,2,3).then(console.log).catch(console.error);
+  worker_exports.max(1,2,3).then(console.log).catch(console.error);
 }
