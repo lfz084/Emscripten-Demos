@@ -67,6 +67,8 @@ var LocalFile = class LocalFile extends JSFile {
   }
   
   seek(offset) {
+    if (!(offset < 0 || offset >= 0)) throw new Error("TypeError: Value is not of type 'unsigned long long'. ")
+    if (offset < 0) throw new Error("TypeError: Value is outside the 'unsigned long long' value range. ")
     this.#offset = offset;
   }
   

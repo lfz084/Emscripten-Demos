@@ -15,3 +15,19 @@ async function showOpenFilePicker(options) {
 async function showSaveFilePicker(options) {
   return window.showSaveFilePicker(options);
 }
+
+// fileHandle = FileSystemFileHandle
+// mode = "read" | "write" | "readwrite"
+// return true | false
+async function verifyPermission(fileHandle, mode) {
+  const opt = {
+    mode
+  };
+  if ((await fileHandle.queryPermission(opt)) === "granted") {
+    return true;
+  }
+  if ((await fileHandle.requestPermission(opt)) === "granted") {
+    return true;
+  }
+  return false;
+}

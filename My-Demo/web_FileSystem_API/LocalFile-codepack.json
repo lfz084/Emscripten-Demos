@@ -3,5 +3,7 @@
 "exportFileNames": ["./LocalFile-exports.js"],
 "workerName": "./LocalFile-worker.js",
 "debugName": "./LocalFile-debug.js",
-"htmlName": "./worker.html"
+"htmlName": "./worker.html",
+"htmlTitle": "LocalFile-Demo",
+"templateHtmlName": "template_mobile.html"
 }

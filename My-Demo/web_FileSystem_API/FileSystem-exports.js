@@ -15,3 +15,15 @@ async function workerShowOpenFilePicker(options) {
 async function workerShowSaveFilePicker(options) {
   return msg_exports.showSaveFilePicker(options);
 }
+
+// fileHandle = FileSystemFileHandle
+// mode = "read" | "write" | "readwrite"
+// return true | false
+async function workerVerifyPermission(fileHandle, mode) {
+  return msg_exports.verifyPermission(fileHandle, mode)
+}
+
+var showDirectoryPicker = workerShowDirectoryPicker;
+var showOpenFilePicker = workerShowOpenFilePicker;
+var showSaveFilePicker = workerShowSaveFilePicker;
+var verifyPermission = workerVerifyPermission;

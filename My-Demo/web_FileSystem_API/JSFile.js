@@ -93,12 +93,28 @@ var JSFile = class JSFile {
     this.#writable = undefined
   }
   
+  async flush() {
+    return this.#writable.flush()
+  }
+  
+  async truncate(size) {
+    return this.#writable.truncate(size)
+  }
+  
+  async seek(offset) {
+    return this.#writable.seek(offset)
+  }
+  
+  async getSize() {
+    return this.#handle.getFile().then(file=>file.size)
+  }
+  
   async read(_buffer) {
     return this.#reader
       .read(new Uint8Array(new ArrayBuffer(_buffer.byteLength)))
       .then(function ({ done, value }) {
         if (done) return 0;
-        const target = new Uint8Array(_buffer);
+        const target = new Uint8Array(_buffer.buffer || _buffer);
         const source = new Uint8Array(value.buffer);
         const len = value.byteLength;
         for (let i = 0; i < len; i++) target[i] = source[i];
@@ -108,6 +124,7 @@ var JSFile = class JSFile {
   
   async write(_buffer) {
     await this.#writable.write(_buffer);
+    return _buffer.byteLength;
   }
   
 };

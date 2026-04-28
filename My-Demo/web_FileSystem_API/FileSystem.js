@@ -1,7 +1,10 @@
 {
   const ENVIRONMENT_IS_WEB = typeof window == 'object';
   const ENVIRONMENT_IS_WORKER = typeof WorkerGlobalScope != 'undefined';
-
+  
+  const BIT_MODE = 0xFF;
+  const BIT_CREATE = 1 << 8;
+  
   let fileIdIndex = 0;
   const NUM_MAX_FILES = 0xFF;
   const filesMap = new Map();
@@ -11,7 +14,7 @@
   const handlesMap = new Map();
   
   const _root = [];
-  const storageManager = ENVIRONMENT_IS_WEB ? navigator.storage : WorkerNavigator.storage;
+  const storageManager = ENVIRONMENT_IS_WEB ? navigator.storage : navigator.storage;
   storageManager.getDirectory().then(root=>(_root.length = 1, _root[0] = root, Object.freeze(_root)))
   
   const getNewFileId = function () {
@@ -53,17 +56,22 @@
   }
   
   const getIdFile = function(id) { 
-    return filesMap.get(id);
+    const file = filesMap.get(id);
+    if (!file) throw new Error("file object is not found");
+    return file;
   }
   
   const getIdHandle = function(id) { 
-    return handlesMap.get(id);
+    const handle = handlesMap.get(id);
+    if (!handle) throw new Error("fileHandle Error");
+    return handle;
   }
   
-  const getSyncFileHandle = async function(filename, options) {
+  const getSyncFileHandle = async function(filename, create) {
     const path = filename.split(/\//).filter(v=>v);
     const name = path.pop();
     if (!name) return;
+    const options = { create: !!create };
     let dir = getRoot();
     for(let i = 0; i < path.length; i++) {
       dir = await dir.getDirectoryHandle(path[i], options).catch(e=>{console.error(e.message)});
@@ -79,33 +87,60 @@
   }
   
   var FileSystem = {
-    openFile: async function(id, path, options) {
-      let file = getIdFile(id);
-      if (!file) throw new Error("file object is not found");
+    addFile: function() {
+      return addFile(new JSFile());
+    },
+    removeFile: function(fileId) {
+      return removeFile(fileId);
+    },
+    openFilePicker: async function(options) {
+      const handles = await showOpenFilePicker(options);
+      const handleIdArr = handles.map(handle => addFileHandle(handle));
+      return handleIdArr;
+    },
+    saveFilePicker: async function(options) {
+      const handle = await showSaveFilePicker(options);
+      const handleId = addFileHandle(handle);
+      return handleId;
+    },
+    openFile: async function(fileId, path, create_mode) {
+      let file = getIdFile(fileId);
       if (typeof path !== "string") throw new Error("'path' is not string");
       const fileClass = path[0] === "*" ? JSFile : LocalFile;
-      const handle = await (fileClass.name === "JSFile" ? getIdHandle(path) : getSyncFileHandle(path, options));
-      if (!handle) throw new Error("fileHandle Error");
+      const handle = await (fileClass.name === "JSFile" ? getIdHandle(path) : getSyncFileHandle(path, BIT_CREATE & create_mode));
       file.close();
       if (file.constructor.name !== fileClass.name) {
         file = new fileClass();
-        filesMap.set(id, file);
+        filesMap.set(fileId, file);
       }
-      return file.open(handle, options); 
+      return file.open(handle, BIT_MODE & create_mode); 
     },
-    closeFile: function(id, ...args) {
-      const file = getIdFile(id);
-      if (!file) throw new Error("file object is not found");
+    closeFile: function(fileId, ...args) {
+      const file = getIdFile(fileId);
       return file.close(...args);
     },
-    readFile:  function(id, ...args) {
-      const file = getIdFile(id);
-      if (!file) throw new Error("file object is not found");
+    flushFile: function(fileId) {
+      const file = getIdFile(fileId);
+      return file.flush();
+    },
+    getFileSize: function(fileId) {
+      const file = getIdFile(fileId);
+      return file.getSize();
+    },
+    truncateFile: function(fileId, size) {
+      const file = getIdFile(fileId);
+      return file.truncate(size);
+    },
+    seekFile: function(fileId, offset) {
+      const file = getIdFile(fileId);
+      return file.seek(offset);
+    },
+    readFile:  function(fileId, ...args) {
+      const file = getIdFile(fileId);
       return file.read(...args);
     },
-    writeFile: function(id, ...args) {
-      const file = getIdFile(id);
-      if (!file) throw new Error("file object is not found");
+    writeFile: function(fileId, ...args) {
+      const file = getIdFile(fileId);
       return file.write(...args);
     },
   };

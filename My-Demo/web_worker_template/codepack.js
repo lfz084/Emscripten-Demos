@@ -16,6 +16,8 @@ var exportFileNames = ["./exports.js"];
 var workerName = "./worker.js";
 var debugName = "./debug.js";
 var htmlName = "./worker.html";
+var htmlTitle = htmlName.split("/").pop();
+var templateHtmlName = "template.html";
 
 if (fs.existsSync(jsonFileName)) {
   try {
@@ -27,6 +29,8 @@ if (fs.existsSync(jsonFileName)) {
     workerName = obj.workerName || workerName;
     debugName = obj.debugName || debugName;
     htmlName = obj.htmlName || htmlName;
+    htmlTitle = obj.htmlTitle || htmlTitle;
+    templateHtmlName = obj.templateHtmlName || templateHtmlName;
   }catch(e) {
     console.error(e)}
 } else {
@@ -109,14 +113,16 @@ if (fs.existsSync(debugName)) {
 
 if (debugCode) {
   console.log(">>> step 08");
-  console.log("read" + __dirname + "/" + "template.html");
-  var htmlData = fs.readFileSync(__dirname + "/" + "template.html");
+  console.log("read" + __dirname + "/" + templateHtmlName);
+  var htmlData = fs.readFileSync(__dirname + "/" + templateHtmlName);
   var htmlCode = htmlData.toString();
 
   console.log(">>> step 09");
   console.log("create html code");
+  const regexp_HTML_TITLE = /\{\{\{\s*\n*\s*HTML_TITLE\s*\n*\s*\}\}\}/;
   const regexp_HTML_SCRIPT = /\{\{\{\s*\n*\s*HTML_SCRIPT\s*\n*\s*\}\}\}/;
   const regexp_HTML_WORKERNAME = /\{\{\{\s*\n*\s*WORKERNAME\s*\n*\s*\}\}\}/;
+  htmlCode = htmlCode.replace(regexp_HTML_TITLE, htmlTitle);
   htmlCode = replaceCode(regexp_HTML_SCRIPT, htmlCode, debugCode);
   htmlCode = htmlCode.replace(regexp_HTML_WORKERNAME, workerName);
 
@@ -130,7 +136,7 @@ console.log("<<< completed.");
 
 
 function filterAllFunctionNames(codeStr) {
-  return codeStr.match(/(?<=function\s+)\w*\s*(?=\()/g);
+  return codeStr.match(/(?<=function\s+)\w*\s*(?=\()/g) || [];
 }
 
 function createMessageFunctionCodeLine(funcname) {

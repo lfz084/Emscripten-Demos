@@ -131,26 +131,13 @@ function createMessageFunction(funcname) {
 // import functions to worker
 if (ENVIRONMENT_IS_WEB) {
   
-  async function verifyPermission(fileHandle, mode) {
-    const opt = {
-      mode
-    };
-    if ((await fileHandle.queryPermission(opt)) === "granted") {
-      return true;
-    }
-    if ((await fileHandle.requestPermission(opt)) === "granted") {
-      return true;
-    }
-    return false;
-  }
+  
   Object.assign(msg_exports, {
-  	verifyPermission,
   })
 } else
   if (ENVIRONMENT_IS_WORKER) {
   
   Object.assign(msg_exports, {
-  	verifyPermission: createMessageFunction("verifyPermission"),
   })
 }
 // end imports.js
@@ -166,6 +153,9 @@ if (ENVIRONMENT_IS_WEB) {
   	read: createMessageFunction("read"),
   	write: createMessageFunction("write"),
   	flush: createMessageFunction("flush"),
+  	seek: createMessageFunction("seek"),
+  	truncate: createMessageFunction("truncate"),
+  	getSize: createMessageFunction("getSize"),
   })
 } else
   if (ENVIRONMENT_IS_WORKER) {
@@ -202,12 +192,27 @@ if (ENVIRONMENT_IS_WEB) {
   async function flush(...args) {
     return lcFile.flush();
   }
+  
+  async function seek(...args) {
+    return lcFile.seek(...args);
+  }
+  
+  async function truncate(...args) {
+    return lcFile.truncate(...args);
+  }
+  
+  async function getSize(...args) {
+    return lcFile.getSize(...args);
+  }
   Object.assign(msg_exports, {
   	open,
   	close,
   	read,
   	write,
   	flush,
+  	seek,
+  	truncate,
+  	getSize,
   })
 }
 // end exports.js

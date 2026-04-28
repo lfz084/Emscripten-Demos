@@ -1,0 +1,9 @@
+{
+"importFileNames": ["./FileSystem-imports.js"],
+"exportFileNames": ["./FileSystem-exports.js", "./FileSystem-exports1.js"],
+"workerName": "./FileSystem-worker.js",
+"debugName": "./FileSystem-debug.js",
+"htmlName": "./worker.html",
+"htmlTitle": "FileSystem-Demo",
+"templateHtmlName": "template_mobile.html"
+}

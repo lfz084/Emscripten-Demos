@@ -1,0 +1,9 @@
+{
+"importFileNames": ["./FileSystem-imports.js"],
+"exportFileNames": ["./FileSystem-exports.js", "./CFile-exports.js"],
+"workerName": "./CFile-worker.js",
+"debugName": "./CFile-debug.js",
+"htmlName": "./worker.html",
+"htmlTitle": "CFile-Demo",
+"templateHtmlName": "template_mobile.html"
+}

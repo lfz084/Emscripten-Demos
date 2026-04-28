@@ -30,3 +30,15 @@ async function write(...args) {
 async function flush(...args) {
   return lcFile.flush();
 }
+
+async function seek(...args) {
+  return lcFile.seek(...args);
+}
+
+async function truncate(...args) {
+  return lcFile.truncate(...args);
+}
+
+async function getSize(...args) {
+  return lcFile.getSize(...args);
+}

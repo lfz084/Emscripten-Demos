@@ -33,9 +33,11 @@ json 文件结构如下例
   所有文件名是默认文件名，你可以更改文件名
 
 {
-  "importFileNames": ["./imports.js"],  // 注入代码的 js 文件数组
-  "exportFileNames": ["./exports.js"],  // 导出代码的 js 文件数组
-  "workerName":      "./worker.js",     // 要生成的 worker 文件名
-  "debugName":       "./debug.js",      // debug 代码文件名
-  "htmlName":        "./worker.html"    // html 文件名
+  "importFileNames":  ["./imports.js"],  // 注入代码的 js 文件数组
+  "exportFileNames":  ["./exports.js"],  // 导出代码的 js 文件数组
+  "workerName":       "./worker.js",     // 要生成的 worker 文件名
+  "debugName":        "./debug.js",      // debug 代码文件名
+  "htmlName":         "./worker.html"    // 要生成的 html 文件名
+  "htmlTitle":        "worker.html"      // html 文件名 title
+  "templateHtmlName": "template.html"    // html template
 }
