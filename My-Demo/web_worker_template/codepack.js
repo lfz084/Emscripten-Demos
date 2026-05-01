@@ -124,7 +124,7 @@ if (debugCode) {
   const regexp_HTML_WORKERNAME = /\{\{\{\s*\n*\s*WORKERNAME\s*\n*\s*\}\}\}/;
   htmlCode = htmlCode.replace(regexp_HTML_TITLE, htmlTitle);
   htmlCode = replaceCode(regexp_HTML_SCRIPT, htmlCode, debugCode);
-  htmlCode = htmlCode.replace(regexp_HTML_WORKERNAME, workerName);
+  htmlCode = htmlCode.replace(regexp_HTML_WORKERNAME, workerName.split("/").pop());
 
   console.log(">>> step 10");
   console.log("write " + htmlName);

@@ -250,8 +250,12 @@ if (ENVIRONMENT_IS_WEB) {
           funcname,
           args
         } = Message.parseMessageArray(data);
-        const result = await (catchError(msg_exports[funcname]))(...args);
-        Message.isRequestMessage(data) && worker.postMessage(Message.createResolveMessage(msgID, funcname, result));
+        try {
+          const result = await msg_exports[funcname](...args);
+          Message.isRequestMessage(data) && worker.postMessage(Message.createResolveMessage(msgID, funcname, result));
+        }catch(e) {
+          console.error(errToString(e))
+        }
       } else console.warn("Unknown message: " + data)
     }
     worker.onerror = function(e) {

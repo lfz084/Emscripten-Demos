@@ -1,11 +1,12 @@
 //  javaScript async file object
 
-/**-------------- JSFile class------------------------------
+/**-------------- class JSFile ------------------------------
  * READ                   static const
  * WRITE                  static const
  * READWRITE              static const
- * STR_MODES              static const Array string
+ * STR_MODES              static const string Array 
  * requestPermission      static async function
+ * isFile                 static function
  * isFileHandle           static function
  * createWritable         static asycn function
  * getReader              static async function
@@ -14,7 +15,11 @@
  * name                   property readOnly
  * hasHandle              function
  * open                   async function
- * close                  function
+ * close                  async function
+ * flush                  async function
+ * getSize                async function
+ * truncate               async function
+ * seek                   async function
  * read                   async function
  * write                  async function
 --------------------------------------------------**/
@@ -37,6 +42,10 @@ var JSFile = class JSFile {
   static async requestPermission(_fileHandle, _mode) {
     return verifyPermission(_fileHandle, STR_MODES[_mode]);
   }
+  
+  static isFile(_handle) {
+    return _handle && _handle.constructor.name === "File";
+  }
 
   static isFileHandle(_handle) {
     return _handle && _handle.constructor.name === "FileSystemFileHandle";
@@ -55,6 +64,7 @@ var JSFile = class JSFile {
   }
   
   #mode;
+  #offset;
   #handle;
   #reader;
   #writable;
@@ -71,38 +81,50 @@ var JSFile = class JSFile {
   }
   
   async open(_handle, mode = 1) {
+    if (JSFile.isFile(_handle)) {
+      this.#mode = JSFile.READ;
+      this.#offset = 0;
+      this.#handle = undefined;
+      this.#reader = _handle.stream().getReader({ mode: "byob" });
+      this.#writable = undefined;
+      return;
+    }
     if (!JSFile.isFileHandle(_handle)) throw new Error("fileHandle error");
     if (!JSFile.STR_MODES[mode]) throw new Error("mode error");
     const permission = await JSFile.requestPermission(_handle, mode);
     if (!permission) throw new Error("requestPermission error");
     this.#mode = mode;
+    this.#offset = 0;
     this.#handle = _handle;
-    if(mode & JSFile.READ) {
-      this.#reader = await JSFile.getReader(this.#handle);
-    }
-    if(mode & JSFile.WRITE) {
-      this.#writable = await JSFile.createWritable(this.#handle);
-    }
+    this.#reader = (mode & JSFile.READ) ? (await JSFile.getReader(this.#handle)) : undefined;
+    this.#writable = (mode & JSFile.WRITE) ? (await JSFile.createWritable(this.#handle)) : undefined;
   }
   
-  close() {
+  async close() {
+    const writable = this.#writable;
     this.#mode = 0;
+    this.#offset = 0;
     this.#handle = undefined;
     this.#reader = undefined;
-    this.#writable && this.#writable.close();
-    this.#writable = undefined
+    this.#writable = undefined;
+    writable && (await writable.close());
   }
   
   async flush() {
-    return this.#writable.flush()
+    await this.#writable.close();
+    this.#writable = await JSFile.createWritable(this.#handle);
+    await this.#writable.seek(this.#offset);
   }
   
   async truncate(size) {
-    return this.#writable.truncate(size)
+    await this.#writable.truncate(size);
+    return undefined;
   }
   
   async seek(offset) {
-    return this.#writable.seek(offset)
+    await this.#writable.seek(offset);
+    this.#offset = offset;
+    return undefined;
   }
   
   async getSize() {
@@ -110,21 +132,25 @@ var JSFile = class JSFile {
   }
   
   async read(_buffer) {
-    return this.#reader
+    const bytes = await this.#reader
       .read(new Uint8Array(new ArrayBuffer(_buffer.byteLength)))
       .then(function ({ done, value }) {
         if (done) return 0;
-        const target = new Uint8Array(_buffer.buffer || _buffer);
-        const source = new Uint8Array(value.buffer);
         const len = value.byteLength;
+        const target = new Uint8Array(_buffer.buffer || _buffer, _buffer.byteOffset, len);
+        const source = new Uint8Array(value.buffer);
         for (let i = 0; i < len; i++) target[i] = source[i];
         return len
       });
+    this.#offset += bytes;
+    return bytes;
   }
   
   async write(_buffer) {
     await this.#writable.write(_buffer);
-    return _buffer.byteLength;
+    const bytes = _buffer.byteLength
+    this.#offset += bytes;
+    return bytes;
   }
   
 };

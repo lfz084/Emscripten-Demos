@@ -7,7 +7,7 @@ async function showDirectoryPicker(options) {
 // [options] = {[id = string], [multiple = boolean], [startIn = "desktop" | ...], [excludeAcceptAllOption = boolean], [type = Array {accept : {key: value}, [description = string]}]}
 // return Promise resolve [FileSystemFileHandle, ...]
 async function showOpenFilePicker(options) {
-  return window.showOpenFilePicker(options);
+  return typeof window.showOpenFilePicker === "function" ? window.showOpenFilePicker(options) : _input_select_file();
 }
 
 // [options] = {[id = string], [suggestedName = string], [startIn = "desktop" | ...], [excludeAcceptAllOption = boolean], [type = Array {accept : {key: value}, [description = string]}]}
@@ -30,4 +30,24 @@ async function verifyPermission(fileHandle, mode) {
     return true;
   }
   return false;
+}
+
+const _input_select_file = async function() {
+  const inputElement = document.createElement("input");
+  inputElement.type = "file";
+  inputElement.style.display = "none";
+  document.body.appendChild(inputElement);
+  inputElement.click();
+  return new Promise((resolve, reject) => {
+    inputElement.addEventListener("change", e => {
+      console.log("change");
+      inputElement.remove();
+      resolve([...inputElement.files]);
+    })
+    inputElement.addEventListener("cancel", e => {
+      console.log("cancel");
+      inputElement.remove();
+      reject(new Error("selectFile cancelled."));
+    })
+  })
 }

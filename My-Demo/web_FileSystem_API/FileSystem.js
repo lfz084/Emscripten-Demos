@@ -86,7 +86,10 @@
     return _root[0];
   }
   
-  var FileSystem = {
+  const _FileSystem = class FileSystem extends Object {};
+  const fileSystem = new _FileSystem();
+  
+  var FileSystem = Object.assign(fileSystem, {
     addFile: function() {
       return addFile(new JSFile());
     },
@@ -115,35 +118,34 @@
       }
       return file.open(handle, BIT_MODE & create_mode); 
     },
-    closeFile: function(fileId, ...args) {
+    closeFile: async function(fileId, ...args) {
       const file = getIdFile(fileId);
       return file.close(...args);
     },
-    flushFile: function(fileId) {
+    flushFile: async function(fileId) {
       const file = getIdFile(fileId);
       return file.flush();
     },
-    getFileSize: function(fileId) {
+    getFileSize: async function(fileId) {
       const file = getIdFile(fileId);
       return file.getSize();
     },
-    truncateFile: function(fileId, size) {
+    truncateFile: async function(fileId, size) {
       const file = getIdFile(fileId);
       return file.truncate(size);
     },
-    seekFile: function(fileId, offset) {
+    seekFile: async function(fileId, offset) {
       const file = getIdFile(fileId);
       return file.seek(offset);
     },
-    readFile:  function(fileId, ...args) {
+    readFile:  async function(fileId, ...args) {
       const file = getIdFile(fileId);
       return file.read(...args);
     },
-    writeFile: function(fileId, ...args) {
+    writeFile: async function(fileId, ...args) {
       const file = getIdFile(fileId);
       return file.write(...args);
     },
-  };
+  });
   Object.freeze(FileSystem);
-  
 }

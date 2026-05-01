@@ -69,23 +69,34 @@
     </script>
     <script>
       const logDiv = document.getElementById("log");
-        
+      const logLineQueue = [];
+      const MAX_LINE = 1024;
+      
       console.log = (...args) => log("black", args);
       console.error = (...args) => log("red", args);
       console.warn = (...args) => log("orange", args);
       console.info = (...args) => log("blue", args);
         
       function log(color = "black", ...args) {
-          logDiv.innerHTML += `<div style="color:${color}">${args}</div>`;
-          logDiv.scrollTo({
-              top: logDiv.scrollHeight,
-              left: 0,
-              behavior: "smooth",
-          });
+        if (logLineQueue.length >= MAX_LINE) {
+          logLineQueue.shift().remove();
+        }
+        const lineElement = document.createElement("div");
+        lineElement.style.color = `${color}`;
+        lineElement.innerHTML = `${args}`;
+        logDiv.appendChild(lineElement);
+        logLineQueue.push(lineElement);
+        logDiv.scrollTo({
+          top: logDiv.scrollHeight,
+          left: 0,
+          behavior: "smooth",
+        });
       }
       
       function clear() {
-        logDiv.innerHTML = "";
+        while(logLineQueue.length) {
+          logLineQueue.shift().remove();
+        }
       }
       
       function catchError(callback) {

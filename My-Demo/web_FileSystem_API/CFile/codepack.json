@@ -1,0 +1,9 @@
+{
+"importFileNames": ["../FileSystem-imports.js", "./imports.js"],
+"exportFileNames": ["../FileSystem-exports.js", "./exports.js"],
+"workerName": "../CFile-worker.js",
+"debugName": "./debug.js",
+"htmlName": "../worker.html",
+"htmlTitle": "CFile-WASM-Demo",
+"templateHtmlName": "template_mobile.html"
+}

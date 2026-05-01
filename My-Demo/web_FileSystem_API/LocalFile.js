@@ -1,8 +1,27 @@
 //  javaScript sync file object
 
-/**_____________ LocalFile class -----------------
- * 
-____________________________________--___________**/
+/**___________ class LocalFile extends JSFile ___________________
+ * READ                   static const
+ * WRITE                  static const
+ * READWRITE              static const
+ * READWRITE_UNSAFE       static const
+ * STR_MODES              static const string Array 
+ * requestPermission      static async function
+ * isFileHandle           static function
+ * createSyncAccessHandle static async function
+ *
+ * kind                   property readOnly
+ * name                   property readOnly
+ * hasHandle              function
+ * open                   async function
+ * close                  function
+ * flush                  function
+ * getSize                function
+ * truncate               function
+ * seek                   function
+ * read                   function
+ * write                  function
+_______________________________________________________________**/
 
 {
 
@@ -19,7 +38,7 @@ var LocalFile = class LocalFile extends JSFile {
   // static get WRITE() { return WRITE }
   // static get READWRITE() { return READWRITE }
   static get READWRITE_UNSAFE() { return READWRITE_UNSAFE }
-   static get STR_MODES() { return STR_MODES }
+  static get STR_MODES() { return STR_MODES }
   
   static async createSyncAccessHandle(handle, options) {
     const accessHandle = await handle.createSyncAccessHandle(options);

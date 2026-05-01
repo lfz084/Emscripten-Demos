@@ -19,7 +19,8 @@ const commands = {
   },
   getSize: async () => {
     console.log(`getSize()`);
-    return msg_exports.getSize();
+    const size = await msg_exports.getSize();
+    console.log(size)
   },
   truncate: async (size=0) => {
     console.log(`truncate(${size})`);
@@ -36,5 +37,17 @@ const commands = {
   write: async () => {
     console.log(`write()`);
     return msg_exports.write();
+  },
+  testWrite: async (path) => {
+    console.log(`testWrite(${path})`);
+    return msg_exports.testWrite(path);
+  },
+  testRead: async (path) => {
+    console.log(`testRead(${path})`);
+    return msg_exports.testRead(path);
+  },
+  testWriteRead: async (path) => {
+    console.log(`testWriteRead(${path})`);
+    return msg_exports.testWriteRead(path);
   },
 };

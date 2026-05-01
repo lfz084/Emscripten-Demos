@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>CFile-Demo</title>
+    <title>CFile-WASM-Demo</title>
     <style>
         .container {
           display: grid;
@@ -69,23 +69,34 @@
     </script>
     <script>
       const logDiv = document.getElementById("log");
-        
+      const logLineQueue = [];
+      const MAX_LINE = 1024;
+      
       console.log = (...args) => log("black", args);
       console.error = (...args) => log("red", args);
       console.warn = (...args) => log("orange", args);
       console.info = (...args) => log("blue", args);
         
       function log(color = "black", ...args) {
-          logDiv.innerHTML += `<div style="color:${color}">${args}</div>`;
-          logDiv.scrollTo({
-              top: logDiv.scrollHeight,
-              left: 0,
-              behavior: "smooth",
-          });
+        if (logLineQueue.length >= MAX_LINE) {
+          logLineQueue.shift().remove();
+        }
+        const lineElement = document.createElement("div");
+        lineElement.style.color = `${color}`;
+        lineElement.innerHTML = `${args}`;
+        logDiv.appendChild(lineElement);
+        logLineQueue.push(lineElement);
+        logDiv.scrollTo({
+          top: logDiv.scrollHeight,
+          left: 0,
+          behavior: "smooth",
+        });
       }
       
       function clear() {
-        logDiv.innerHTML = "";
+        while(logLineQueue.length) {
+          logLineQueue.shift().remove();
+        }
       }
       
       function catchError(callback) {
@@ -246,46 +257,50 @@
       Object.freeze(cmdHistory);
     </script>
     <script>
-        const commands = {
+        commands = {
           openFilePicker: async () => {
-            console.log(`openFilePicker()`);
-            const handles = await msg_exports.openFilePicker();
-            console.log(...handles)
-          },
-          saveFilePicker: async () => {
-            console.log(`saveFilePicker()`);
-            const handle = await msg_exports.saveFilePicker();
-            console.log(handle)
+            console.log("openFilePicker()");
+            const path = await msg_exports.openFilePicker();
+            console.log(path);
           },
           open: async (path, mode) => {
             console.log(`open(${path}, ${mode})`);
             return msg_exports.open(path, mode);
           },
           close: async () => {
-            console.log(`close()`);
+            console.log("close()");
             return msg_exports.close();
           },
-          getSize: async () => {
-            console.log(`getSize()`);
-            return msg_exports.getSize();
+          flush: async () => {
+            console.log("flush()");
+            return msg_exports.flush();
           },
-          truncate: async (size=0) => {
+          getSize: async () => {
+            console.log("getSize()");
+            const size = await msg_exports.getSize();
+            console.log(size);
+          },
+          truncate: async (size) => {
             console.log(`truncate(${size})`);
             return msg_exports.truncate(size);
           },
-          seek: async (offset=0) => {
+          seek: async (offset) => {
             console.log(`seek(${offset})`);
             return msg_exports.seek(offset);
           },
           read: async () => {
-            console.log(`read()`);
+            console.log("read()");
             return msg_exports.read();
           },
           write: async () => {
-            console.log(`write()`);
+            console.log("write()");
             return msg_exports.write();
           },
-        };
+          testWriteRead: async (path) => {
+            console.log("testWriteRead()");
+            return msg_exports.testWriteRead(path);
+          }
+        }
         
         const has_buttons = typeof buttons === "object";
         const has_commands = typeof commands === "object";
@@ -305,7 +320,7 @@
 		      selectElem.appendChild(op);
         })
     </script>
-    <script src="./CFile-worker.js">
+    <script src="CFile-worker.js">
       worker
     </script>
 </body>
